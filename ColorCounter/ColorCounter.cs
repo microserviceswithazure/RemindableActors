@@ -28,7 +28,7 @@
         {
         }
 
-        public static string Classify(Color color)
+        private static string Classify(Color color)
         {
             var hue = color.GetHue();
             var saturation = color.GetSaturation();
