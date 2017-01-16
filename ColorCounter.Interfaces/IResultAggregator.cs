@@ -1,6 +1,6 @@
 ﻿namespace ColorCounter.Interfaces
 {
-    using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -10,10 +10,10 @@
     ///     This interface defines the methods exposed by an actor.
     ///     Clients use this interface to interact with the actor that implements it.
     /// </summary>
-    public interface IColorCounter : IActor
+    public interface IResultAggregator : IActor
     {
-        Task CountPixels(string color, CancellationToken token);
+        Task AggregateResult(string colorName, long count);
 
-        Task SetImage(Uri imageUri, CancellationToken token);
+        Task<Dictionary<string, long>> Result(CancellationToken token);
     }
 }

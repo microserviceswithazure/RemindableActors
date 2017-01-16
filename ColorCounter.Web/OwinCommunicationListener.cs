@@ -1,33 +1,49 @@
-﻿using System;
-using System.Diagnostics;
-using System.Fabric;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Owin.Hosting;
-using Microsoft.ServiceFabric.Services.Communication.Runtime;
-using Owin;
-
-namespace ColorCounter.Web
+﻿namespace ColorCounter.Web
 {
+    using System;
+    using System.Fabric;
+    using System.Globalization;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Microsoft.Owin.Hosting;
+    using Microsoft.ServiceFabric.Services.Communication.Runtime;
+
+    using Owin;
+
     internal class OwinCommunicationListener : ICommunicationListener
     {
-        private readonly ServiceEventSource eventSource;
-        private readonly Action<IAppBuilder> startup;
-        private readonly ServiceContext serviceContext;
-        private readonly string endpointName;
         private readonly string appRoot;
 
-        private IDisposable webApp;
-        private string publishAddress;
+        private readonly string endpointName;
+
+        private readonly ServiceEventSource eventSource;
+
+        private readonly ServiceContext serviceContext;
+
+        private readonly Action<IAppBuilder> startup;
+
         private string listeningAddress;
 
-        public OwinCommunicationListener(Action<IAppBuilder> startup, ServiceContext serviceContext, ServiceEventSource eventSource, string endpointName)
+        private string publishAddress;
+
+        private IDisposable webApp;
+
+        public OwinCommunicationListener(
+            Action<IAppBuilder> startup,
+            ServiceContext serviceContext,
+            ServiceEventSource eventSource,
+            string endpointName)
             : this(startup, serviceContext, eventSource, endpointName, null)
         {
         }
 
-        public OwinCommunicationListener(Action<IAppBuilder> startup, ServiceContext serviceContext, ServiceEventSource eventSource, string endpointName, string appRoot)
+        public OwinCommunicationListener(
+            Action<IAppBuilder> startup,
+            ServiceContext serviceContext,
+            ServiceEventSource eventSource,
+            string endpointName,
+            string appRoot)
         {
             if (startup == null)
             {
@@ -58,22 +74,36 @@ namespace ColorCounter.Web
 
         public bool ListenOnSecondary { get; set; }
 
+        public void Abort()
+        {
+            this.eventSource.ServiceMessage(this.serviceContext, "Aborting web server");
+
+            this.StopWebServer();
+        }
+
+        public Task CloseAsync(CancellationToken cancellationToken)
+        {
+            this.eventSource.ServiceMessage(this.serviceContext, "Closing web server");
+
+            this.StopWebServer();
+
+            return Task.FromResult(true);
+        }
+
         public Task<string> OpenAsync(CancellationToken cancellationToken)
         {
             var serviceEndpoint = this.serviceContext.CodePackageActivationContext.GetEndpoint(this.endpointName);
-            int port = serviceEndpoint.Port;
+            var port = serviceEndpoint.Port;
 
             if (this.serviceContext is StatefulServiceContext)
             {
-                StatefulServiceContext statefulServiceContext = this.serviceContext as StatefulServiceContext;
+                var statefulServiceContext = this.serviceContext as StatefulServiceContext;
 
                 this.listeningAddress = string.Format(
                     CultureInfo.InvariantCulture,
                     "http://+:{0}/{1}{2}/{3}/{4}",
                     port,
-                    string.IsNullOrWhiteSpace(this.appRoot)
-                        ? string.Empty
-                        : this.appRoot.TrimEnd('/') + '/',
+                    string.IsNullOrWhiteSpace(this.appRoot) ? string.Empty : this.appRoot.TrimEnd('/') + '/',
                     statefulServiceContext.PartitionId,
                     statefulServiceContext.ReplicaId,
                     Guid.NewGuid());
@@ -84,9 +114,7 @@ namespace ColorCounter.Web
                     CultureInfo.InvariantCulture,
                     "http://+:{0}/{1}",
                     port,
-                    string.IsNullOrWhiteSpace(this.appRoot)
-                        ? string.Empty
-                        : this.appRoot.TrimEnd('/') + '/');
+                    string.IsNullOrWhiteSpace(this.appRoot) ? string.Empty : this.appRoot.TrimEnd('/') + '/');
             }
             else
             {
@@ -107,28 +135,12 @@ namespace ColorCounter.Web
             }
             catch (Exception ex)
             {
-                this.eventSource.ServiceMessage(this.serviceContext, "Web server failed to open. " + ex.ToString());
+                this.eventSource.ServiceMessage(this.serviceContext, "Web server failed to open. " + ex);
 
                 this.StopWebServer();
 
                 throw;
             }
-        }
-
-        public Task CloseAsync(CancellationToken cancellationToken)
-        {
-            this.eventSource.ServiceMessage(this.serviceContext, "Closing web server");
-
-            this.StopWebServer();
-
-            return Task.FromResult(true);
-        }
-
-        public void Abort()
-        {
-            this.eventSource.ServiceMessage(this.serviceContext, "Aborting web server");
-
-            this.StopWebServer();
         }
 
         private void StopWebServer()

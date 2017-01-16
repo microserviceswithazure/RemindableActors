@@ -1,31 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Runtime;
-using Microsoft.ServiceFabric.Actors.Client;
-using ColorCounter.Interfaces;
-
-namespace ColorCounter
+﻿namespace ColorCounter
 {
+    using System;
+    using System.Collections.Generic;
     using System.Drawing;
+    using System.IO;
+    using System.Net;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
 
-    /// <remarks>
-    /// This class represents an actor.
-    /// Every ActorID maps to an instance of this class.
-    /// The StatePersistence attribute determines persistence and replication of actor state:
-    ///  - Persisted: State is written to disk and replicated.
-    ///  - Volatile: State is kept in memory only and replicated.
-    ///  - None: State is kept in memory only and not replicated.
-    /// </remarks>
+    using global::ColorCounter.Interfaces;
+
+    using Microsoft.ServiceFabric.Actors;
+    using Microsoft.ServiceFabric.Actors.Client;
+    using Microsoft.ServiceFabric.Actors.Runtime;
+
     [StatePersistence(StatePersistence.Persisted)]
     internal class ColorCounter : Actor, IColorCounter, IRemindable
     {
         /// <summary>
-        /// Initializes a new instance of ColorCounter
+        ///     Initializes a new instance of ColorCounter
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
@@ -34,20 +28,20 @@ namespace ColorCounter
         {
         }
 
-        /// <summary>
-        /// This method is called whenever an actor is activated.
-        /// An actor is activated the first time any of its methods are invoked.
-        /// </summary>
-        protected override Task OnActivateAsync()
+        public static string Classify(Color color)
         {
-            ActorEventSource.Current.ActorMessage(this, "Actor activated.");
-            this.StateManager.TryAddStateAsync("sourceImage", new Uri(string.Empty));
-            return this.StateManager.TryAddStateAsync("colorCounter", new Dictionary<string, long>());
-        }
-
-        public Task SetImage(Uri imageUri, CancellationToken token)
-        {
-            return this.StateManager.AddOrUpdateStateAsync("sourceImage", imageUri, (key, value) => value, token);
+            var hue = color.GetHue();
+            var saturation = color.GetSaturation();
+            var brightness = color.GetBrightness();
+            if (brightness < 0.2) return "black";
+            if (brightness > 0.8) return "white";
+            if (saturation < 0.25) return "gray";
+            if (hue < 30) return "red";
+            if (hue < 90) return "yellow";
+            if (hue < 150) return "green";
+            if (hue < 210) return "cyan";
+            if (hue < 270) return "blue";
+            return hue < 330 ? "magenta" : "red";
         }
 
         public async Task CountPixels(string color, CancellationToken token)
@@ -59,46 +53,63 @@ namespace ColorCounter
                 TimeSpan.FromDays(1));
         }
 
-        public Task<IDictionary<string, int>> GetPixelCount(CancellationToken token)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
         {
             if (reminderName.Equals("countRequest"))
             {
-                var imageUri = await this.StateManager.TryGetStateAsync<Uri>("sourceImage");
-                var colorToInspect = Encoding.ASCII.GetString(context).ToLowerInvariant();
-                if (imageUri.HasValue)
+                try
                 {
-                    var image = new Bitmap(imageUri.Value.ToString(), true);
-                    for (var widthCounter = 0; widthCounter < image.Width; ++widthCounter)
+                    var imageUri = await this.StateManager.TryGetStateAsync<string>("sourceImage");
+                    var colorToInspect = Encoding.ASCII.GetString(context).ToLowerInvariant();
+                    if (imageUri.HasValue)
                     {
-                        for (var heightCounter = 0; heightCounter < image.Height; ++heightCounter)
+                        var webClient = new WebClient();
+                        var imageBytes = webClient.DownloadData(imageUri.Value);
+                        var image = new Bitmap(new MemoryStream(imageBytes));
+                        for (var widthCounter = 0; widthCounter < image.Width; ++widthCounter)
                         {
-                            var pixelColor = image.GetPixel(widthCounter, heightCounter);
-                            if (pixelColor.Name.ToLowerInvariant() == colorToInspect)
+                            for (var heightCounter = 0; heightCounter < image.Height; ++heightCounter)
                             {
-                                var colorDictionaryState = await this.StateManager.TryGetStateAsync<Dictionary<string, long>>("colorCounter");
-                                if (colorDictionaryState.HasValue)
+                                var pixelColor = image.GetPixel(widthCounter, heightCounter);
+                                if (Classify(pixelColor) == colorToInspect.ToLowerInvariant())
                                 {
-                                    var colorDictionary = colorDictionaryState.Value;
-                                    var colorValue = colorDictionary[colorToInspect];
-                                    colorDictionary[colorToInspect] = colorValue + 1;
-                                    await this.StateManager.AddOrUpdateStateAsync(
-                                        "colorCounter",
-                                        colorDictionary,
-                                        (key, value) => colorDictionary);
+                                    var proxy = ActorProxy.Create<IResultAggregator>(this.Id);
+                                    await proxy.AggregateResult(colorToInspect.ToLowerInvariant(), 1);
                                 }
+
+                                Thread.Sleep(TimeSpan.FromSeconds(1));
                             }
+
+                            Thread.Sleep(TimeSpan.FromSeconds(1));
                         }
                     }
-                }
 
-                var reminder = this.GetReminder("countRequest");
-                await this.UnregisterReminderAsync(reminder);
+                    var reminder = this.GetReminder("countRequest");
+                    await this.UnregisterReminderAsync(reminder);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
+        }
+
+        public Task SetImage(Uri imageUri, CancellationToken token)
+        {
+            var imageLink = imageUri.ToString();
+            return this.StateManager.AddOrUpdateStateAsync("sourceImage", imageLink, (key, value) => imageLink, token);
+        }
+
+        /// <summary>
+        ///     This method is called whenever an actor is activated.
+        ///     An actor is activated the first time any of its methods are invoked.
+        /// </summary>
+        protected override Task OnActivateAsync()
+        {
+            ActorEventSource.Current.ActorMessage(this, "Actor activated.");
+            this.StateManager.TryAddStateAsync("sourceImage", string.Empty);
+            return this.StateManager.TryAddStateAsync("colorCounter", new Dictionary<string, long>());
         }
     }
 }

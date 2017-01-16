@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Tracing;
-using System.Fabric;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.ServiceFabric.Services.Runtime;
-
-namespace ColorCounter.Web
+﻿namespace ColorCounter.Web
 {
+    using System;
+    using System.Diagnostics.Tracing;
+    using System.Fabric;
+    using System.Threading.Tasks;
+
     [EventSource(Name = "MyCompany-RemindableActors-Web")]
     internal sealed class ServiceEventSource : EventSource
     {
@@ -22,7 +18,9 @@ namespace ColorCounter.Web
         }
 
         // Instance constructor is private to enforce singleton semantics
-        private ServiceEventSource() : base() { }
+        private ServiceEventSource()
+        {
+        }
 
         // Event keywords can be used to categorize events. 
         // Each keyword is a bit flag. A single event can be associated with multiple keywords (via EventAttribute.Keywords property).
@@ -30,6 +28,7 @@ namespace ColorCounter.Web
         public static class Keywords
         {
             public const EventKeywords Requests = (EventKeywords)0x1L;
+
             public const EventKeywords ServiceInitialization = (EventKeywords)0x2L;
         }
 
@@ -46,18 +45,19 @@ namespace ColorCounter.Web
         {
             if (this.IsEnabled())
             {
-                string finalMessage = string.Format(message, args);
-                Message(finalMessage);
+                var finalMessage = string.Format(message, args);
+                this.Message(finalMessage);
             }
         }
 
         private const int MessageEventId = 1;
+
         [Event(MessageEventId, Level = EventLevel.Informational, Message = "{0}")]
         public void Message(string message)
         {
             if (this.IsEnabled())
             {
-                WriteEvent(MessageEventId, message);
+                this.WriteEvent(MessageEventId, message);
             }
         }
 
@@ -66,9 +66,8 @@ namespace ColorCounter.Web
         {
             if (this.IsEnabled())
             {
-
-                string finalMessage = string.Format(message, args);
-                ServiceMessage(
+                var finalMessage = string.Format(message, args);
+                this.ServiceMessage(
                     serviceContext.ServiceName.ToString(),
                     serviceContext.ServiceTypeName,
                     GetReplicaOrInstanceId(serviceContext),
@@ -84,23 +83,33 @@ namespace ColorCounter.Web
         // This results in more efficient parameter handling, but requires explicit allocation of EventData structure and unsafe code.
         // To enable this code path, define UNSAFE conditional compilation symbol and turn on unsafe code support in project properties.
         private const int ServiceMessageEventId = 2;
+
         [Event(ServiceMessageEventId, Level = EventLevel.Informational, Message = "{7}")]
         private
 #if UNSAFE
         unsafe
 #endif
-        void ServiceMessage(
-            string serviceName,
-            string serviceTypeName,
-            long replicaOrInstanceId,
-            Guid partitionId,
-            string applicationName,
-            string applicationTypeName,
-            string nodeName,
-            string message)
+            void ServiceMessage(
+                string serviceName,
+                string serviceTypeName,
+                long replicaOrInstanceId,
+                Guid partitionId,
+                string applicationName,
+                string applicationTypeName,
+                string nodeName,
+                string message)
         {
 #if !UNSAFE
-            WriteEvent(ServiceMessageEventId, serviceName, serviceTypeName, replicaOrInstanceId, partitionId, applicationName, applicationTypeName, nodeName, message);
+            this.WriteEvent(
+                ServiceMessageEventId,
+                serviceName,
+                serviceTypeName,
+                replicaOrInstanceId,
+                partitionId,
+                applicationName,
+                applicationTypeName,
+                nodeName,
+                message);
 #else
             const int numArgs = 8;
             fixed (char* pServiceName = serviceName, pServiceTypeName = serviceTypeName, pApplicationName = applicationName, pApplicationTypeName = applicationTypeName, pNodeName = nodeName, pMessage = message)
@@ -121,45 +130,54 @@ namespace ColorCounter.Web
         }
 
         private const int ServiceTypeRegisteredEventId = 3;
-        [Event(ServiceTypeRegisteredEventId, Level = EventLevel.Informational, Message = "Service host process {0} registered service type {1}", Keywords = Keywords.ServiceInitialization)]
+
+        [Event(ServiceTypeRegisteredEventId, Level = EventLevel.Informational,
+                Message = "Service host process {0} registered service type {1}", Keywords = Keywords.ServiceInitialization)
+        ]
         public void ServiceTypeRegistered(int hostProcessId, string serviceType)
         {
-            WriteEvent(ServiceTypeRegisteredEventId, hostProcessId, serviceType);
+            this.WriteEvent(ServiceTypeRegisteredEventId, hostProcessId, serviceType);
         }
 
         private const int ServiceHostInitializationFailedEventId = 4;
-        [Event(ServiceHostInitializationFailedEventId, Level = EventLevel.Error, Message = "Service host initialization failed", Keywords = Keywords.ServiceInitialization)]
+
+        [Event(ServiceHostInitializationFailedEventId, Level = EventLevel.Error,
+            Message = "Service host initialization failed", Keywords = Keywords.ServiceInitialization)]
         public void ServiceHostInitializationFailed(string exception)
         {
-            WriteEvent(ServiceHostInitializationFailedEventId, exception);
+            this.WriteEvent(ServiceHostInitializationFailedEventId, exception);
         }
 
         // A pair of events sharing the same name prefix with a "Start"/"Stop" suffix implicitly marks boundaries of an event tracing activity.
         // These activities can be automatically picked up by debugging and profiling tools, which can compute their execution time, child activities,
         // and other statistics.
         private const int ServiceRequestStartEventId = 5;
-        [Event(ServiceRequestStartEventId, Level = EventLevel.Informational, Message = "Service request '{0}' started", Keywords = Keywords.Requests)]
+
+        [Event(ServiceRequestStartEventId, Level = EventLevel.Informational, Message = "Service request '{0}' started",
+            Keywords = Keywords.Requests)]
         public void ServiceRequestStart(string requestTypeName)
         {
-            WriteEvent(ServiceRequestStartEventId, requestTypeName);
+            this.WriteEvent(ServiceRequestStartEventId, requestTypeName);
         }
 
         private const int ServiceRequestStopEventId = 6;
-        [Event(ServiceRequestStopEventId, Level = EventLevel.Informational, Message = "Service request '{0}' finished", Keywords = Keywords.Requests)]
+
+        [Event(ServiceRequestStopEventId, Level = EventLevel.Informational, Message = "Service request '{0}' finished",
+            Keywords = Keywords.Requests)]
         public void ServiceRequestStop(string requestTypeName, string exception = "")
         {
-            WriteEvent(ServiceRequestStopEventId, requestTypeName, exception);
+            this.WriteEvent(ServiceRequestStopEventId, requestTypeName, exception);
         }
 
         private static long GetReplicaOrInstanceId(ServiceContext context)
         {
-            StatelessServiceContext stateless = context as StatelessServiceContext;
+            var stateless = context as StatelessServiceContext;
             if (stateless != null)
             {
                 return stateless.InstanceId;
             }
 
-            StatefulServiceContext stateful = context as StatefulServiceContext;
+            var stateful = context as StatefulServiceContext;
             if (stateful != null)
             {
                 return stateful.ReplicaId;
@@ -167,6 +185,7 @@ namespace ColorCounter.Web
 
             throw new NotSupportedException("Context type not supported.");
         }
+
 #if UNSAFE
         private int SizeInBytes(string s)
         {

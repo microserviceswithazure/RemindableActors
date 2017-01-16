@@ -5,6 +5,9 @@
     <Parameter Name="ColorCounterActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="ColorCounterActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="ColorCounterActorService_TargetReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ResultAggregatorActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="ResultAggregatorActorService_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ResultAggregatorActorService_TargetReplicaSetSize" DefaultValue="3" />
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
@@ -30,6 +33,11 @@
     <Service Name="ColorCounterActorService" GeneratedIdRef="2b8f14db-ccf5-451c-bae2-0d45223a3020|Persisted">
       <StatefulService ServiceTypeName="ColorCounterActorServiceType" TargetReplicaSetSize="[ColorCounterActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ColorCounterActorService_MinReplicaSetSize]">
         <UniformInt64Partition PartitionCount="[ColorCounterActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+    <Service Name="ResultAggregatorActorService" GeneratedIdRef="bc505d49-0108-444f-8029-90f890946487|Persisted">
+      <StatefulService ServiceTypeName="ResultAggregatorActorServiceType" TargetReplicaSetSize="[ResultAggregatorActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ResultAggregatorActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[ResultAggregatorActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
       </StatefulService>
     </Service>
   </DefaultServices>

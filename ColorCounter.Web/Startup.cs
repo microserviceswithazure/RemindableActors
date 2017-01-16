@@ -1,8 +1,12 @@
-﻿using System.Web.Http;
-using Owin;
-
-namespace ColorCounter.Web
+﻿namespace ColorCounter.Web
 {
+    using System.Linq;
+    using System.Web.Http;
+
+    using Owin;
+
+    using Swashbuckle.Application;
+
     public static class Startup
     {
         // This code configures Web API. The Startup class is specified as a type
@@ -10,13 +14,19 @@ namespace ColorCounter.Web
         public static void ConfigureApp(IAppBuilder appBuilder)
         {
             // Configure Web API for self-host. 
-            HttpConfiguration config = new HttpConfiguration();
+            var config = new HttpConfiguration();
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
-            );
+                defaults: new { id = RouteParameter.Optional });
+
+            config.EnableSwagger(
+                c =>
+                    {
+                        c.SingleApiVersion("v1", "Pattern: Remindable Actors");
+                        c.ResolveConflictingActions(x => x.First());
+                    }).EnableSwaggerUi();
 
             appBuilder.UseWebApi(config);
         }

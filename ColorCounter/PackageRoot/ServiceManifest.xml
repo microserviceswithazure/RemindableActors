@@ -15,6 +15,20 @@
         </Extension>
       </Extensions>
     </StatefulServiceType>
+    <StatefulServiceType ServiceTypeName="ResultAggregatorActorServiceType" HasPersistedState="true">
+      <Extensions>
+        <Extension Name="__GeneratedServiceType__" GeneratedId="bc505d49-0108-444f-8029-90f890946487|Persisted">
+          <GeneratedNames xmlns="http://schemas.microsoft.com/2015/03/fabact-no-schema">
+            <DefaultService Name="ResultAggregatorActorService" />
+            <ServiceEndpoint Name="ResultAggregatorActorServiceEndpoint" />
+            <ReplicatorEndpoint Name="ResultAggregatorActorServiceReplicatorEndpoint" />
+            <ReplicatorConfigSection Name="ResultAggregatorActorServiceReplicatorConfig" />
+            <ReplicatorSecurityConfigSection Name="ResultAggregatorActorServiceReplicatorSecurityConfig" />
+            <StoreConfigSection Name="ResultAggregatorActorServiceLocalStoreConfig" />
+          </GeneratedNames>
+        </Extension>
+      </Extensions>
+    </StatefulServiceType>
   </ServiceTypes>
   <CodePackage Name="Code" Version="1.0.0">
     <EntryPoint>
@@ -28,6 +42,8 @@
     <Endpoints>
       <Endpoint Name="ColorCounterActorServiceEndpoint" />
       <Endpoint Name="ColorCounterActorServiceReplicatorEndpoint" />
+      <Endpoint Name="ResultAggregatorActorServiceEndpoint" />
+      <Endpoint Name="ResultAggregatorActorServiceReplicatorEndpoint" />
     </Endpoints>
   </Resources>
   <!-- The content will be generated during build -->
