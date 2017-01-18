@@ -111,5 +111,15 @@
             this.StateManager.TryAddStateAsync("sourceImage", string.Empty);
             return this.StateManager.TryAddStateAsync("colorCounter", new Dictionary<string, long>());
         }
+
+        /// <summary>
+        /// Demonstrates a long running process.
+        /// </summary>
+        /// <returns>Task.</returns>
+        public Task LongRunningProcess()
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(10));
+            return Task.FromResult(1);
+        }
     }
 }

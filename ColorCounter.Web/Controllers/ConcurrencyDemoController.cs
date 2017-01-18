@@ -3,7 +3,6 @@
     using System;
     using System.Net;
     using System.Net.Http;
-    using System.Threading;
     using System.Threading.Tasks;
     using System.Web.Http;
 
@@ -16,7 +15,7 @@
     ///     Class ImageController.
     /// </summary>
     /// <seealso cref="System.Web.Http.ApiController" />
-    public class ImageController : ApiController
+    public class ConcurrencyDemoController : ApiController
     {
         /// <summary>
         ///     The service URI
@@ -24,24 +23,16 @@
         private static readonly Uri ServiceUri = new Uri("fabric:/RemindableActors/ColorCounterActorService");
 
         /// <summary>
-        ///     The CTS
+        ///     Demonstrates concurrency requirement of Actors.
         /// </summary>
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
-
-        /// <summary>
-        ///     Submit image to be processed by the actor.
-        /// </summary>
-        /// <param name="actorId">The actor identifier.</param>
-        /// <param name="uri">Public URI of the image to process.</param>
         /// <returns>Task&lt;HttpResponseMessage&gt;.</returns>
-        public async Task<HttpResponseMessage> Post(string actorId, Uri uri)
+        public async Task<HttpResponseMessage> Get(string actorId)
         {
             try
             {
                 var colorCounterActor = ActorProxy.Create<IColorCounter>(new ActorId(actorId), ServiceUri);
-                var token = this.cts.Token;
-                await colorCounterActor.SetImage(uri, token);
-                return this.Request.CreateResponse(HttpStatusCode.OK, "submitted");
+                await colorCounterActor.LongRunningProcess();
+                return this.Request.CreateResponse(HttpStatusCode.OK, "completed");
             }
             catch (Exception e)
             {

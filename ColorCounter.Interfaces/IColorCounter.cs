@@ -15,5 +15,7 @@
         Task CountPixels(string color, CancellationToken token);
 
         Task SetImage(Uri imageUri, CancellationToken token);
+
+        Task LongRunningProcess();
     }
 }
