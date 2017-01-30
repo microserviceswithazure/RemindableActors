@@ -29,6 +29,7 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ColorCounter.Website\ColorCounter.Website.xproj" />
     <ProjectReference Include="..\ColorCounter.Web\ColorCounter.Web.csproj" />
     <ProjectReference Include="..\ColorCounter\ColorCounter.csproj" />
   </ItemGroup>

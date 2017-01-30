@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<div class="row">
+    <form asp-controller="Home" asp-action="TriggerActor" method="post" class="form-horizontal" role="form">
+        <h1>
+            Hi, my name is <input type="text" name="name" id="name" class="text-line" />.
+        </h1>
+        <h2>
+            I am going to find <input type="text" name="color" id="color" class="text-line" /> colored pixels in this image <input type="text" name="imagePath" id="imagePath" class="text-line" />.
+        </h2>
+        <br />
+        <br />
+        <br />
+        <div class="col-md-12 text-center">
+            <button class="btn btn-default action">Trigger My Long Running Process</button>
+        </div>
+    </form>
+</div>

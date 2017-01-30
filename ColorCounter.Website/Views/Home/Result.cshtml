@@ -1,0 +1,21 @@
+﻿@model ColorCounter.Website.Model.User
+@{
+    ViewData["Title"] = "Result";
+}
+<script type="text/javascript">
+    window.setInterval(function () {
+        var url = "/Home/GetCount?userName=@Model.UserName";
+        $.get(url,
+            function (data) {
+                var result = JSON.parse(data);
+                var dt = new Date();
+                $("#count").text(result.color);
+                $("#message").text("Response received at " + dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds());
+            }).fail(function () {
+                alert("failed");
+            });
+    }, 5000);
+</script>
+<h1>Results for @Model.UserName.ToUpperInvariant()</h1>
+<h2>Pixels found: <span id="count">Please wait...</span></h2>
+<h2>Status: <span id="message">Please wait...</span></h2>

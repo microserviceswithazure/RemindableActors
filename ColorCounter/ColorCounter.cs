@@ -76,11 +76,9 @@
                                     var proxy = ActorProxy.Create<IResultAggregator>(this.Id);
                                     await proxy.AggregateResult(colorToInspect.ToLowerInvariant(), 1);
                                 }
-
-                                Thread.Sleep(TimeSpan.FromSeconds(1));
                             }
 
-                            Thread.Sleep(TimeSpan.FromSeconds(1));
+                            Thread.Sleep(TimeSpan.FromMilliseconds(10));
                         }
                     }
 

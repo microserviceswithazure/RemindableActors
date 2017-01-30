@@ -1,6 +1,7 @@
 ﻿namespace ColorCounter
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -55,8 +56,14 @@
 
         public async Task<Dictionary<string, long>> Result(CancellationToken token)
         {
+            var aggregateResult = new Dictionary<string, long> { { "color", 0 } };
             var result = await this.StateManager.TryGetStateAsync<Dictionary<string, long>>("colorCounter", token);
-            return result.HasValue ? result.Value : new Dictionary<string, long>();
+            if (result.HasValue)
+            {
+                aggregateResult["color"] = result.Value.Sum(x => x.Value);
+            }
+
+            return aggregateResult;
         }
 
         /// <summary>
