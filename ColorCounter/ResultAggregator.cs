@@ -56,14 +56,14 @@
 
         public async Task<Dictionary<string, string>> Result(CancellationToken token)
         {
-            var aggregateResult = new Dictionary<string, string> { { "color", "0/0" } };
+            var aggregateResult = new Dictionary<string, string> { { "color", "0 px. out of 0 px." } };
             var result = await this.StateManager.TryGetStateAsync<Dictionary<string, long>>("colorCounter", token);
             var totalPixels = await this.StateManager.TryGetStateAsync<long>("totalPixels", token);
             if (result.HasValue)
             {
                 if (totalPixels.HasValue)
                 {
-                    aggregateResult["color"] = $"{result.Value.Sum(x => x.Value)}/{totalPixels.Value}";
+                    aggregateResult["color"] = $"{result.Value.Sum(x => x.Value)}px. out of {totalPixels.Value}px.";
                 }
             }
 
