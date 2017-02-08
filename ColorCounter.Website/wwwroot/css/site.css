@@ -5,6 +5,14 @@
     color: #ffffff;
 }
 
+select {
+    background-color: #333333;
+}
+
+option {
+    background-color: #333333;
+}
+
 .text-line {
     background-color: transparent;
     color: #ffffff;

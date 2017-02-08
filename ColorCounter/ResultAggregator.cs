@@ -54,13 +54,17 @@
             }
         }
 
-        public async Task<Dictionary<string, long>> Result(CancellationToken token)
+        public async Task<Dictionary<string, string>> Result(CancellationToken token)
         {
-            var aggregateResult = new Dictionary<string, long> { { "color", 0 } };
+            var aggregateResult = new Dictionary<string, string> { { "color", "0/0" } };
             var result = await this.StateManager.TryGetStateAsync<Dictionary<string, long>>("colorCounter", token);
+            var totalPixels = await this.StateManager.TryGetStateAsync<long>("totalPixels", token);
             if (result.HasValue)
             {
-                aggregateResult["color"] = result.Value.Sum(x => x.Value);
+                if (totalPixels.HasValue)
+                {
+                    aggregateResult["color"] = $"{result.Value.Sum(x => x.Value)}/{totalPixels.Value}";
+                }
             }
 
             return aggregateResult;
@@ -74,6 +78,14 @@
         {
             ActorEventSource.Current.ActorMessage(this, "Actor activated.");
             return this.StateManager.TryAddStateAsync("colorCounter", new Dictionary<string, long>());
+        }
+
+        public async Task TotalPixels(long count)
+        {
+            await this.StateManager.AddOrUpdateStateAsync(
+                       "totalPixels",
+                       count,
+                       (key, value) => count);
         }
     }
 }

@@ -16,6 +16,11 @@
             });
     }, 5000);
 </script>
-<h1>Results for @Model.UserName.ToUpperInvariant()</h1>
+<h1>Hi, @Model.UserName.ToUpperInvariant()</h1>
+<hr />
+<h2>Selected color: @Model.SelectedColor</h2>
 <h2>Pixels found: <span id="count">Please wait...</span></h2>
 <h2>Status: <span id="message">Please wait...</span></h2>
+<br />
+<h2>Image under analysis</h2>
+<img src="@Model.ImagePath" alt="selected image" />

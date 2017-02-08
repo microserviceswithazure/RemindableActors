@@ -63,9 +63,11 @@
                     var colorToInspect = Encoding.ASCII.GetString(context).ToLowerInvariant();
                     if (imageUri.HasValue)
                     {
+                        var proxy = ActorProxy.Create<IResultAggregator>(this.Id);
                         var webClient = new WebClient();
                         var imageBytes = webClient.DownloadData(imageUri.Value);
                         var image = new Bitmap(new MemoryStream(imageBytes));
+                        await proxy.TotalPixels(image.Width * image.Height);
                         for (var widthCounter = 0; widthCounter < image.Width; ++widthCounter)
                         {
                             for (var heightCounter = 0; heightCounter < image.Height; ++heightCounter)
@@ -73,7 +75,6 @@
                                 var pixelColor = image.GetPixel(widthCounter, heightCounter);
                                 if (Classify(pixelColor) == colorToInspect.ToLowerInvariant())
                                 {
-                                    var proxy = ActorProxy.Create<IResultAggregator>(this.Id);
                                     await proxy.AggregateResult(colorToInspect.ToLowerInvariant(), 1);
                                 }
                             }

@@ -39,9 +39,9 @@ namespace ColorCounter.Website.Controllers
             return View();
         }
 
-        public IActionResult Result(string userName)
+        public IActionResult Result(string userName, string selectedColor, string imagePath)
         {
-            return View(new User { UserName = userName });
+            return View(new User { UserName = userName, SelectedColor=selectedColor, ImagePath=imagePath });
         }
 
         public async Task<string> GetCount(string userName)
@@ -106,7 +106,7 @@ namespace ColorCounter.Website.Controllers
                             tokenSource.Token);
                     if (result.StatusCode == HttpStatusCode.OK)
                     {
-                        return RedirectToAction("Result", new { userName = name });
+                        return RedirectToAction("Result", new { userName = name, selectedColor = color, imagePath = imagePath });
                     }
                 }
             }

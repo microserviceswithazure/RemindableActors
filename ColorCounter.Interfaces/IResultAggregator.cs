@@ -14,6 +14,8 @@
     {
         Task AggregateResult(string colorName, long count);
 
-        Task<Dictionary<string, long>> Result(CancellationToken token);
+        Task TotalPixels(long count);
+
+        Task<Dictionary<string, string>> Result(CancellationToken token);
     }
 }
